@@ -16,13 +16,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v3
-
-      - name: Upload artifact (site files)
-        uses: actions/upload-pages-artifact@v1
+      - name: Deploy to gh-pages branch (avoid deprecated upload-artifact)
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          path: './'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
+          # If you want the site at the repository root (https://USERNAME.github.io/REPO),
+          # set `publish_branch: gh-pages` (default) and leave repository settings to serve from gh-pages.
 
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v1
+      # Note: This workflow publishes the repository contents to the gh-pages branch.
+      # After a successful run, go to GitHub repo Settings -> Pages and set the source to gh-pages branch (if not automatic).
