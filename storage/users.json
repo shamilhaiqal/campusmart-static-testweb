@@ -1,0 +1,26 @@
+﻿[
+    {
+        "id":  "80f95c07-bfa4-412c-89af-c956c98341f8",
+        "name":  "Shamil",
+        "matric":  "2240145",
+        "email":  "aiybiey10@gmail.com",
+        "role":  "student",
+        "passwordSalt":  "C+ZP+zMJoTYd33E7B14XNQ==",
+        "passwordHash":  "Ut4InmEBLpeJgQsqDE8ZMpYb8qnBfxiSJyxDSg4fq8c=",
+        "matricCard":  "storage/registrations/matric-card-350c2fd60f2b430db3879980e363ceed.png",
+        "sellerReceipt":  null,
+        "registeredAt":  "2026-08-14T16:54:55.9314280+08:00"
+    },
+    {
+        "id":  "f3c955b7-1e60-4e1d-a616-2b2aad707fea",
+        "name":  "Shamil",
+        "matric":  "2240146",
+        "email":  "aiybiey05@gmail.com",
+        "role":  "seller",
+        "passwordSalt":  "62Vti/oyN1y1eGrdRxAucQ==",
+        "passwordHash":  "1GXnfQmCq15WMpmK/kpvp1NG3Wt1i6oUKhRBh3W1Ox0=",
+        "matricCard":  "storage/registrations/matric-card-546cc6ef98404d6bb9c016fc041a624e.png",
+        "sellerReceipt":  "storage/registrations/seller-receipt-0673fe0f548d41e48b2fb8bc55d63f48.pdf",
+        "registeredAt":  "2026-08-14T16:56:39.9382931+08:00"
+    }
+]
