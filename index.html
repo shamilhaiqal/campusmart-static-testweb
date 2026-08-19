@@ -1,0 +1,2232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusMart PolyCC | Student Marketplace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            navy: '#020617',       // darker navy
+                            teal: '#14b8a6',
+                            tealHover: '#0f766e',
+                            amber: '#fbbf24',
+                            amberHover: '#f59e0b',
+                            light: '#020617',      // dark bg
+                            muted: '#9ca3af'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.6)',
+                        'hover': '0 10px 25px -5px rgba(0, 0, 0, 0.8)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Smooth transitions */
+        .transition-all {
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 300ms;
+        }
+
+        /* Custom scrollbar for horizontal category nav */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Badge pop animation */
+        @keyframes pop {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.4);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .animate-pop {
+            animation: pop 0.3s ease-in-out;
+        }
+
+        /* Validation indicator styles */
+        .field-wrapper {
+            position: relative;
+        }
+
+        .validation-dot {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #ef4444;
+            display: none;
+            z-index: 10;
+        }
+
+        .validation-dot.visible {
+            display: block;
+        }
+
+        .validation-dot.valid {
+            background-color: #10b981;
+        }
+
+        /* For select dropdowns, position the dot differently */
+        select + .validation-dot {
+            right: 30px;
+        }
+
+        /* For file upload areas, position the dot in the corner */
+        .file-upload-wrapper {
+            position: relative;
+        }
+
+        .file-upload-wrapper .validation-dot {
+            top: 10px;
+            right: 10px;
+            transform: none;
+        }
+
+        /* For checkbox validation */
+        .checkbox-wrapper {
+            position: relative;
+        }
+
+        .checkbox-wrapper .validation-dot {
+            right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+    </style>
+</head>
+
+<body class="bg-slate-950 font-sans text-slate-100 antialiased flex flex-col min-h-screen">
+
+    <header class="sticky top-0 z-50 bg-slate-900/95 border-b border-slate-800 shadow-sm backdrop-blur">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div id="nav-logo" class="flex-shrink-0 flex items-center cursor-pointer group">
+                    <div
+                        class="w-8 h-8 rounded bg-brand-navy group-hover:bg-brand-teal transition-colors flex items-center justify-center mr-2">
+                        <span class="text-white font-bold text-lg leading-none">P</span>
+                    </div>
+                    <span class="font-bold text-xl text-white tracking-tight">CampusMart <span
+                            class="text-brand-teal">PolyCC</span></span>
+                </div>
+
+                <!-- Search Bar (Hidden on Cart Page) -->
+                <div id="desktop-search-container" class="hidden md:flex flex-1 max-w-xl mx-8 transition-opacity">
+                    <div class="relative w-full">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <input type="text" id="search-input"
+                            class="block w-full pl-10 pr-3 py-2 border border-slate-700 rounded-lg leading-5 bg-slate-900 placeholder-slate-500 focus:outline-none focus:bg-slate-900 focus:ring-2 focus:ring-brand-teal focus:border-brand-teal transition-colors sm:text-sm"
+                            placeholder="Search products or sellers...">
+                    </div>
+                </div>
+
+                <!-- Right Navigation -->
+                <div class="flex items-center space-x-4 md:space-x-6">
+                    <a href="#" id="nav-login-btn"
+                        class="text-sm font-medium text-slate-300 hover:text-brand-teal transition-colors">Log In</a>
+                    <a href="#" id="nav-register-btn"
+                        class="hidden md:block text-sm font-medium text-slate-950 bg-brand-teal hover:bg-brand-tealHover px-4 py-2 rounded-md transition-colors">Register</a>
+                    <div id="nav-auth-divider" class="hidden sm:block h-5 border-l border-slate-700"></div>
+                    <button id="nav-developer-btn" onclick="showView('developer')" class="hidden text-sm font-semibold text-brand-amber hover:text-amber-300 transition-colors">Developer</button>
+                    <button onclick="showView('profile')" class="flex items-center gap-2 group">
+                        <div
+                            class="w-8 h-8 rounded-full bg-brand-teal flex items-center justify-center text-slate-950 font-bold border border-slate-700 overflow-hidden">
+                            <span id="nav-profile-initial">M</span>
+                        </div>
+                        <span
+                            id="nav-profile-name" class="hidden sm:block text-sm font-medium text-slate-300 group-hover:text-brand-teal transition-colors">Profile</span>
+                    </button>
+                    <!-- Cart Button -->
+                    <button id="nav-cart-btn"
+                        class="relative p-2 text-slate-300 hover:text-brand-teal transition-colors focus:outline-none group">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
+                            </path>
+                        </svg>
+                        <span id="cart-badge"
+                            class="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-brand-amber rounded-full">0</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Mobile Search Bar -->
+            <div id="mobile-search-container" class="md:hidden pb-3">
+                <div class="relative w-full">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <input type="text" id="mobile-search-input"
+                        class="block w-full pl-10 pr-3 py-2 border border-slate-700 rounded-lg leading-5 bg-slate-900 placeholder-slate-500 focus:outline-none focus:bg-slate-900 focus:ring-2 focus:ring-brand-teal focus:border-brand-teal sm:text-sm"
+                        placeholder="Search products...">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+
+        <!-- SHARED: CATEGORY NAV -->
+        <div id="shared-category-nav" class="block">
+            <nav class="bg-slate-900 border-b border-slate-800 shadow-sm">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <ul id="category-nav"
+                        class="flex items-center space-x-1 overflow-x-auto hide-scrollbar py-2 text-sm font-medium text-slate-200">
+                        <li><button
+                                class="cat-btn px-4 py-1.5 rounded-full bg-brand-teal text-slate-950 shadow-sm whitespace-nowrap transition-all font-semibold"
+                                data-category="All">All</button></li>
+                        <li><button
+                                class="cat-btn px-4 py-1.5 rounded-full hover:bg-slate-800 whitespace-nowrap transition-all"
+                                data-category="Books">Books</button></li>
+                        <li><button
+                                class="cat-btn px-4 py-1.5 rounded-full hover:bg-slate-800 whitespace-nowrap transition-all"
+                                data-category="Apparel">Apparel</button></li>
+                        <li><button
+                                class="cat-btn px-4 py-1.5 rounded-full hover:bg-slate-800 whitespace-nowrap transition-all"
+                                data-category="Food">Food</button></li>
+                        <li><button
+                                class="cat-btn px-4 py-1.5 rounded-full hover:bg-slate-800 whitespace-nowrap transition-all"
+                                data-category="Stationery">Stationery</button></li>
+                        <li><button
+                                class="cat-btn px-4 py-1.5 rounded-full hover:bg-slate-800 whitespace-nowrap transition-all"
+                                data-category="Services">Services</button></li>
+                        <li><button
+                                class="cat-btn px-4 py-1.5 rounded-full hover:bg-slate-800 whitespace-nowrap transition-all"
+                                data-category="Electronics">Electronics</button></li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+
+        <!-- VIEW: HOME PAGE -->
+        <div id="view-home" class="block">
+            <!-- Hero Section -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <!-- Left Content -->
+                    <div class="space-y-6">
+                        <div
+                            class="inline-flex items-center px-3 py-1 rounded-full bg-amber-500/10 text-amber-300 text-xs font-semibold tracking-wide uppercase border border-amber-400/40">
+                            For PolyCC Students
+                        </div>
+                        <h1 class="text-4xl md:text-5xl font-bold text-white leading-tight">
+                            Your Campus Marketplace, <span
+                                class="text-transparent bg-clip-text bg-gradient-to-r from-brand-teal to-cyan-400">Unified.</span>
+                        </h1>
+                        <p class="text-lg text-slate-300 max-w-lg leading-relaxed">
+                            Discover products, support student entrepreneurs, and safely trade within the PolyCC
+                            community. Say goodbye to scattered WhatsApp groups and hello to a trusted, organized
+                            marketplace.
+                        </p>
+                        <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 pt-2">
+                            <button
+                                onclick="document.getElementById('featured-products').scrollIntoView({behavior: 'smooth'})"
+                                class="px-8 py-3.5 bg-brand-amber hover:bg-brand-amberHover text-slate-950 font-semibold rounded-lg shadow-soft hover:shadow-hover transition-all text-center">
+                                Explore Products
+                            </button>
+                            <button onclick="checkLoginBeforeSell()"
+                                class="px-8 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-brand-teal text-slate-100 font-semibold rounded-lg shadow-soft hover:shadow-hover transition-all text-center">
+                                Become a Seller
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right Visual -->
+                    <div
+                        class="relative w-full h-80 md:h-[450px] bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl overflow-hidden shadow-inner border border-slate-800 hidden sm:flex items-center justify-center p-8">
+                        <div
+                            class="absolute top-0 right-0 w-64 h-64 bg-teal-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2">
+                        </div>
+                        <div
+                            class="absolute bottom-0 left-0 w-48 h-48 bg-amber-500/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4">
+                        </div>
+
+                        <div class="relative z-10 w-full max-w-md">
+                            <div class="absolute -top-20 left-4 w-48 bg-slate-900 rounded-xl shadow-hover border border-slate-700 p-4 transform -rotate-6 animate-bounce"
+                                style="animation-duration: 4s;">
+                                <div class="w-full h-24 bg-slate-800 rounded-lg mb-3"></div>
+                                <div class="w-3/4 h-3 bg-slate-700 rounded mb-2"></div>
+                                <div class="w-1/2 h-3 bg-teal-500/40 rounded"></div>
+                            </div>
+                            <div class="absolute -bottom-16 right-0 w-56 bg-slate-900 rounded-xl shadow-hover border border-slate-700 p-4 transform rotate-3 animate-bounce"
+                                style="animation-duration: 5s;">
+                                <div class="flex items-center space-x-3 mb-3">
+                                    <div class="w-10 h-10 bg-amber-500/30 rounded-full"></div>
+                                    <div>
+                                        <div class="w-20 h-3 bg-slate-700 rounded mb-1"></div>
+                                        <div class="w-12 h-2 bg-slate-800 rounded"></div>
+                                    </div>
+                                </div>
+                                <div
+                                    class="w-full h-16 bg-slate-900 rounded-lg border border-slate-700 flex items-center justify-center text-xs font-semibold text-slate-100">
+                                    Portfolio Growth</div>
+                            </div>
+                            <div
+                                class="relative mx-auto w-64 bg-slate-900/90 backdrop-blur-sm rounded-2xl shadow-soft border border-slate-700 p-5 z-20">
+                                <div class="flex justify-between items-center mb-4">
+                                    <span class="text-sm font-bold text-slate-100">Dashboard</span>
+                                    <span class="px-2 py-1 bg-emerald-500/20 text-emerald-300 text-xs rounded-full">+12%
+                                        Sales</span>
+                                </div>
+                                <div class="space-y-3">
+                                    <div
+                                        class="w-full h-8 bg-slate-800 rounded flex items-center px-2 border border-slate-700">
+                                        <div class="w-4 h-4 rounded-full bg-brand-teal mr-2"></div>
+                                        <div class="h-2 w-1/3 bg-slate-600 rounded"></div>
+                                    </div>
+                                    <div
+                                        class="w-full h-8 bg-slate-800 rounded flex items-center px-2 border border-slate-700">
+                                        <div class="w-4 h-4 rounded-full bg-brand-amber mr-2"></div>
+                                        <div class="h-2 w-1/2 bg-slate-600 rounded"></div>
+                                    </div>
+                                    <div
+                                        class="w-full h-8 bg-slate-800 rounded flex items-center px-2 border border-slate-700">
+                                        <div class="w-4 h-4 rounded-full bg-slate-100 mr-2"></div>
+                                        <div class="h-2 w-1/4 bg-slate-600 rounded"></div>
+                                    </div>
+                                </div>
+                                <div class="mt-4 pt-4 border-t border-slate-800">
+                                    <div
+                                        class="h-8 w-full bg-brand-teal rounded-lg text-slate-950 flex items-center justify-center text-xs font-semibold">
+                                        View Analytics</div>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="validation-dot" aria-hidden="true"></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Featured Products Section -->
+            <section id="featured-products" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="flex flex-col md:flex-row md:items-end justify-between mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white mb-2">Latest Products on Campus</h2>
+                        <p class="text-slate-400 text-sm">Discover what PolyCC students are selling right now.</p>
+                    </div>
+                </div>
+
+                <div id="product-grid"
+                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 lg:gap-8">
+                    <!-- Products injected here via JS -->
+                </div>
+            </section>
+
+            <!-- Popular Categories Section -->
+            <section class="bg-slate-900 border-y border-slate-800 py-16">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center mb-10">
+                        <h2 class="text-2xl font-bold text-white mb-2">Popular Categories</h2>
+                        <p class="text-slate-400 text-sm">Quickly find what you need by browsing top categories.</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+                        <a href="#" data-category="Food"
+                            class="pop-cat-card group block p-6 bg-slate-900 rounded-2xl border border-slate-800 hover:border-brand-teal hover:bg-slate-800/80 hover:shadow-soft transition-all text-center">
+                            <div
+                                class="w-14 h-14 mx-auto bg-slate-800 rounded-full flex items-center justify-center shadow-sm mb-4 group-hover:-translate-y-1 transition-transform">
+                                <span class="text-2xl">🍔</span>
+                            </div>
+                            <h3 class="font-semibold text-slate-100">Food</h3>
+                        </a>
+                        <a href="#" data-category="Apparel"
+                            class="pop-cat-card group block p-6 bg-slate-900 rounded-2xl border border-slate-800 hover:border-brand-teal hover:bg-slate-800/80 hover:shadow-soft transition-all text-center">
+                            <div
+                                class="w-14 h-14 mx-auto bg-slate-800 rounded-full flex items-center justify-center shadow-sm mb-4 group-hover:-translate-y-1 transition-transform">
+                                <span class="text-2xl">👕</span>
+                            </div>
+                            <h3 class="font-semibold text-slate-100">Apparel</h3>
+                        </a>
+                        <a href="#" data-category="Stationery"
+                            class="pop-cat-card group block p-6 bg-slate-900 rounded-2xl border border-slate-800 hover:border-brand-teal hover:bg-slate-800/80 hover:shadow-soft transition-all text-center">
+                            <div
+                                class="w-14 h-14 mx-auto bg-slate-800 rounded-full flex items-center justify-center shadow-sm mb-4 group-hover:-translate-y-1 transition-transform">
+                                <span class="text-2xl">📓</span>
+                            </div>
+                            <h3 class="font-semibold text-slate-100">Stationery</h3>
+                        </a>
+                        <a href="#" data-category="Services"
+                            class="pop-cat-card group block p-6 bg-slate-900 rounded-2xl border border-slate-800 hover:border-brand-teal hover:bg-slate-800/80 hover:shadow-soft transition-all text-center">
+                            <div
+                                class="w-14 h-14 mx-auto bg-slate-800 rounded-full flex items-center justify-center shadow-sm mb-4 group-hover:-translate-y-1 transition-transform">
+                                <span class="text-2xl">💻</span>
+                            </div>
+                            <h3 class="font-semibold text-slate-100">Services</h3>
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Why PolyCC Shop Section -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <div class="text-center mb-12">
+                    <h2 class="text-2xl font-bold text-white mb-2">Why Use CampusMart PolyCC?</h2>
+                    <p class="text-slate-400 text-sm">Built to empower and protect the student community.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div class="flex flex-col items-center text-center">
+                        <div
+                            class="w-12 h-12 bg-teal-500/15 text-teal-300 rounded-xl flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="font-bold text-slate-100 mb-2">Verified Student Sellers</h3>
+                        <p class="text-sm text-slate-400">Every seller is authenticated as an active PolyCC student.</p>
+                    </div>
+                    <div class="flex flex-col items-center text-center">
+                        <div
+                            class="w-12 h-12 bg-amber-500/15 text-amber-300 rounded-xl flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="font-bold text-slate-100 mb-2">Easier Product Discovery</h3>
+                        <p class="text-sm text-slate-400">Find what you need instantly without scrolling through chats.
+                        </p>
+                    </div>
+                    <div class="flex flex-col items-center text-center">
+                        <div
+                            class="w-12 h-12 bg-sky-500/15 text-sky-300 rounded-xl flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="font-bold text-slate-100 mb-2">Safer Campus Transactions</h3>
+                        <p class="text-sm text-slate-400">Meet up safely on campus for secure handovers.</p>
+                    </div>
+                    <div class="flex flex-col items-center text-center">
+                        <div
+                            class="w-12 h-12 bg-purple-500/15 text-purple-300 rounded-xl flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                            </svg>
+                        </div>
+                        <h3 class="font-bold text-slate-100 mb-2">Supports Entrepreneurship</h3>
+                        <p class="text-sm text-slate-400">Empowering student businesses to grow their portfolio.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Mini Showcase Section -->
+            <section class="bg-brand-navy text-slate-100 py-12 border-t border-slate-800">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex flex-col md:flex-row items-center justify-between">
+                        <div class="md:w-2/3 mb-6 md:mb-0">
+                            <h2 class="text-2xl font-bold mb-3">More than just a store. A launchpad.</h2>
+                            <p class="text-slate-400 text-sm max-w-2xl leading-relaxed">
+                                CampusMart PolyCC doubles as a product marketing space and portfolio hub for ambitious
+                                students. Build your brand visibility on campus before you even graduate.
+                            </p>
+                        </div>
+                        <div class="md:w-1/3 flex justify-end">
+                            <button onclick="showView('sell')"
+                                class="px-6 py-3 bg-transparent border border-brand-amber text-brand-amber hover:bg-brand-amber hover:text-slate-950 font-semibold rounded-lg transition-colors whitespace-nowrap">
+                                Learn About Selling
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- VIEW: CATEGORY PAGE -->
+        <div id="view-category" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+            <div class="flex items-center justify-between mb-8 pb-4 border-b border-slate-800">
+                <div>
+                    <h1 id="category-page-title" class="text-3xl font-bold text-white mb-2">Category</h1>
+                    <p class="text-slate-400 text-sm">Explore products from trusted student sellers.</p>
+                </div>
+            </div>
+
+            <div id="category-product-grid"
+                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
+                <!-- Products injected here via JS -->
+            </div>
+        </div>
+
+        <!-- VIEW: CART PAGE -->
+        <div id="view-cart" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+
+            <div class="flex items-center justify-between mb-8">
+                <h1 class="text-3xl font-bold text-white">Your Cart</h1>
+                <button id="back-to-shop-btn"
+                    class="text-brand-teal hover:text-brand-tealHover font-medium flex items-center transition-colors">
+                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Continue Shopping
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                <!-- Cart Items List -->
+                <div class="lg:col-span-2">
+                    <div id="cart-items-container" class="space-y-4">
+                        <!-- Items injected here via JS -->
+                    </div>
+                </div>
+
+                <!-- Order Summary -->
+                <div class="lg:col-span-1">
+                    <div class="bg-slate-900 rounded-2xl shadow-soft border border-slate-800 p-6 sticky top-24">
+                        <h2 class="text-lg font-bold text-white mb-6">Order Summary</h2>
+
+                        <div class="space-y-4 mb-6 text-sm text-slate-300">
+                            <div class="flex justify-between">
+                                <span>Subtotal</span>
+                                <span id="cart-subtotal" class="font-medium text-slate-100">RM0.00</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Platform Fee (2%)</span>
+                                <span id="cart-fee" class="font-medium text-slate-100">RM0.00</span>
+                            </div>
+                            <div class="pt-4 border-t border-slate-800 flex justify-between items-center">
+                                <span class="text-base font-bold text-white">Total</span>
+                                <span id="cart-total" class="text-xl font-bold text-brand-teal">RM0.00</span>
+                            </div>
+                        </div>
+
+                        <button id="checkout-btn"
+                            class="w-full py-3.5 bg-brand-amber hover:bg-brand-amberHover text-slate-950 font-bold rounded-lg shadow-soft hover:shadow-hover transition-colors text-center disabled:opacity-50 disabled:cursor-not-allowed">
+                            Proceed to Checkout
+                        </button>
+
+                        <p class="mt-4 text-xs text-center text-slate-500">
+                            Secure campus handovers. No hidden shipping fees.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: CHECKOUT PAGE -->
+        <div id="view-checkout" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+
+            <div class="flex items-center justify-between mb-8">
+                <h1 class="text-3xl font-bold text-white">Checkout Details</h1>
+                <button onclick="showView('cart')"
+                    class="text-brand-teal hover:text-brand-tealHover font-medium flex items-center transition-colors">
+                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Back to Cart
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                <!-- Left: Checkout Form -->
+                <div class="lg:col-span-2 space-y-8">
+                    <form id="checkout-form" class="space-y-8">
+                        <!-- Buyer Info -->
+                        <div class="bg-slate-900 rounded-2xl border border-slate-800 p-6 sm:p-8 shadow-soft">
+                            <h2 class="text-xl font-bold text-white mb-5 border-b border-slate-800 pb-3">1. Buyer
+                                Information</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-200 mb-1">Full Name</label>
+                                    <input type="text" required
+                                        class="w-full px-4 py-2 border border-slate-700 rounded-lg bg-slate-950 text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-200 mb-1">Matric Number</label>
+                                    <input type="text" required
+                                        class="w-full px-4 py-2 border border-slate-700 rounded-lg bg-slate-950 text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-slate-200 mb-1">Phone Number</label>
+                                    <input type="tel" required
+                                        class="w-full px-4 py-2 border border-slate-700 rounded-lg bg-slate-950 text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- COD Details -->
+                        <div class="bg-slate-900 rounded-2xl border border-slate-800 p-6 sm:p-8 shadow-soft">
+                            <h2 class="text-xl font-bold text-white mb-5 border-b border-slate-800 pb-3">2. Order
+                                Fulfilment Details</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-slate-200 mb-1">Preferred COD
+                                        Location</label>
+                                    <input type="text" placeholder="e.g. Student Hub, Main Library" required
+                                        class="w-full px-4 py-2 border border-slate-700 rounded-lg bg-slate-950 text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-200 mb-1">Preferred COD
+                                        Date</label>
+                                    <input type="date" required
+                                        class="w-full px-4 py-2 border border-slate-700 rounded-lg bg-slate-950 text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-200 mb-1">Preferred COD
+                                        Time</label>
+                                    <input type="time" required
+                                        class="w-full px-4 py-2 border border-slate-700 rounded-lg bg-slate-950 text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-slate-200 mb-1">Notes to Seller
+                                        (Optional)</label>
+                                    <textarea rows="2"
+                                        class="w-full px-4 py-2 border border-slate-700 rounded-lg bg-slate-950 text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment -->
+                        <div class="bg-slate-900 rounded-2xl border border-slate-800 p-6 sm:p-8 shadow-soft">
+                            <h2 class="text-xl font-bold text-white mb-5 border-b border-slate-800 pb-3">3. Payment
+                                Details</h2>
+
+                            <div class="mb-6 bg-sky-900/40 border-l-4 border-sky-500 p-4 rounded-r-lg">
+                                <h3 class="text-sm font-bold text-sky-200 mb-1">Payment Instructions</h3>
+                                <p class="text-sm text-slate-200 leading-relaxed">Please make payment to the seller
+                                    using the provided bank account or QR code. After payment, fill in your details
+                                    below and attach your proof of payment link before submitting your order. Your order
+                                    will only be processed after payment details are received.</p>
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-5">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-200 mb-1">Payment Method</label>
+                                    <select required
+                                        class="w-full px-4 py-2 border border-slate-700 rounded-lg bg-slate-950 text-slate-100 focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors">
+                                        <option value="">Select a method...</option>
+                                        <option value="bank">Bank Transfer</option>
+                                        <option value="qr">QR Payment (DuitNow)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-200 mb-1">Transaction Reference
+                                        Number</label>
+                                    <input type="text" required placeholder="e.g. 1234567890"
+                                        class="w-full px-4 py-2 border border-slate-700 rounded-lg bg-slate-950 text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-200 mb-2">Upload Proof of Payment
+                                        (PDF Only)</label>
+                                    <div
+                                        class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-700 border-dashed rounded-xl hover:border-brand-teal transition-colors bg-slate-950">
+                                        <div class="space-y-1 text-center">
+                                            <svg class="mx-auto h-12 w-12 text-slate-500" stroke="currentColor"
+                                                fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <div class="flex text-sm text-slate-300 justify-center">
+                                                <label for="checkout-receipt"
+                                                    class="relative cursor-pointer bg-slate-900 rounded-md font-medium text-brand-teal hover:text-brand-tealHover focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-offset-slate-950 focus-within:ring-brand-teal px-1">
+                                                    <span id="receipt-upload-text">Upload receipt PDF</span>
+                                                    <input id="checkout-receipt" name="checkout-receipt" type="file"
+                                                        accept=".pdf" class="sr-only" required>
+                                                </label>
+                                                <p class="pl-1">or drag and drop</p>
+                                            </div>
+                                            <p class="text-xs text-slate-500">PDF files only</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Terms and Conditions Agreement / Warning -->
+                        <div class="bg-slate-900 rounded-2xl border border-slate-800 p-6 sm:p-8 shadow-soft">
+                            <div class="flex items-start">
+                                <div class="flex items-center h-5">
+                                    <input id="checkout-terms" type="checkbox" required
+                                        class="focus:ring-brand-teal h-4 w-4 text-brand-teal border-slate-700 rounded bg-slate-950">
+                                </div>
+                                <div class="ml-3 text-sm">
+                                    <label for="checkout-terms" class="font-medium text-slate-300 select-none">
+                                        Saya setuju dengan syarat pembelian dan mengesahkan pembayaran adalah benar.
+                                        <span class="text-red-400 block mt-1 font-semibold leading-relaxed">
+                                            Peringatan: Jika terdapat penipuan dalam pembayaran, tindakan tegas akan
+                                            dikenakan melalui data peribadi yang telah didaftarkan di bawah nombor
+                                            matrik yang sah di bawah universiti.
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-2">
+                            <button type="submit"
+                                class="w-full py-4 bg-brand-amber hover:bg-brand-amberHover text-slate-950 font-bold rounded-xl shadow-soft hover:shadow-hover transition-all text-lg">
+                                Submit Order & Payment Info
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Right: Order Summary Mini -->
+                <div class="lg:col-span-1">
+                    <div class="bg-slate-900 rounded-2xl border border-slate-800 p-6 sticky top-24">
+                        <h2 class="text-lg font-bold text-white mb-4 border-b border-slate-800 pb-3">Order Summary</h2>
+
+                        <div id="checkout-summary-items" class="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2">
+                            <!-- Items injected here via JS -->
+                        </div>
+
+                        <div class="space-y-3 mb-2 text-sm text-slate-300 border-t border-slate-800 pt-4">
+                            <div class="flex justify-between">
+                                <span>Subtotal</span>
+                                <span id="checkout-subtotal" class="font-medium text-slate-100">RM0.00</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Platform Fee (2%)</span>
+                                <span id="checkout-fee" class="font-medium text-slate-100">RM0.00</span>
+                            </div>
+                            <div class="pt-4 mt-2 border-t border-slate-800 flex justify-between items-center">
+                                <span class="text-base font-bold text-white">Total to Pay</span>
+                                <span id="checkout-total" class="text-xl font-bold text-brand-teal">RM0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: LOGIN PAGE -->
+        <div id="view-login" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+            <div class="max-w-md mx-auto bg-slate-900 p-8 sm:p-10 rounded-2xl shadow-soft border border-slate-800">
+                <div class="text-center mb-8">
+                    <div
+                        class="w-16 h-16 rounded-xl bg-brand-navy flex items-center justify-center mx-auto mb-4 shadow-soft">
+                        <span class="text-white font-bold text-3xl leading-none">P</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white tracking-tight">CampusMart Login</h2>
+                    <p class="mt-2 text-sm text-slate-400">Access your campus marketplace account.</p>
+                </div>
+
+                <form id="login-form" class="space-y-6">
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-200 mb-1">Matric Number / Admin Username</label>
+                            <input type="text" id="login-matric" required placeholder="e.g. 18DDT21F1001"
+                                class="w-full px-4 py-3 border border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors bg-slate-950 text-slate-100 placeholder-slate-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-200 mb-1">Password</label>
+                            <input type="password" id="login-password" required placeholder="Enter your password"
+                                class="w-full px-4 py-3 border border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors bg-slate-950 text-slate-100 placeholder-slate-500 text-sm uppercase">
+                            <p class="mt-1.5 text-xs text-slate-400 text-right"><a href="#"
+                                    class="hover:text-brand-teal transition-colors">Forgot matric number?</a></p>
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                        class="w-full py-3.5 px-4 rounded-xl shadow-soft text-base font-bold text-slate-950 bg-brand-teal hover:bg-brand-tealHover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-brand-teal transition-all hover:shadow-hover">
+                        Secure Log In
+                    </button>
+
+                    <div class="text-center pt-2">
+                        <p class="text-sm text-slate-300">New student? <a href="#" id="login-register-link"
+                                class="font-bold text-brand-amber hover:text-brand-amberHover">Register here</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- VIEW: REGISTER PAGE -->
+        <div id="view-register" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+            <div class="max-w-lg mx-auto bg-slate-900 p-8 sm:p-10 rounded-2xl shadow-soft border border-slate-800">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-white tracking-tight">Student Registration</h2>
+                    <p class="mt-2 text-sm text-slate-400">Create your campus marketplace account.</p>
+                </div>
+
+                <form id="register-form" class="space-y-6" novalidate>
+                    <!-- 1. Personal Info -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-200 mb-2">1. Personal Information</label>
+                        <div class="space-y-4">
+                            <div class="field-wrapper"><input type="text" id="register-name" required placeholder="Full Name"
+                                class="w-full px-4 py-3 border border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors bg-slate-950 text-slate-100 placeholder-slate-500 text-sm">
+                                <span class="validation-dot" aria-hidden="true"></span></div>
+                            <div class="field-wrapper"><input type="text" id="register-matric" required
+                                placeholder="Matric Number (e.g. 18DDT21F1001)"
+                                class="w-full px-4 py-3 border border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors bg-slate-950 text-slate-100 placeholder-slate-500 text-sm uppercase">
+                                <span class="validation-dot" aria-hidden="true"></span></div>
+                            <div class="field-wrapper"><input type="email" id="register-email" required placeholder="Email Address"
+                                class="w-full px-4 py-3 border border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors bg-slate-950 text-slate-100 placeholder-slate-500 text-sm">
+                                <span class="validation-dot" aria-hidden="true"></span></div>
+                            <div class="field-wrapper"><input type="password" id="register-password" required placeholder="Create Password"
+                                class="w-full px-4 py-3 border border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors bg-slate-950 text-slate-100 placeholder-slate-500 text-sm">
+                                <span class="validation-dot" aria-hidden="true"></span></div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Account Type Selection -->
+                    <div class="field-wrapper">
+                        <label class="block text-sm font-medium text-slate-200 mb-2">2. Select Account Type</label>
+                        <select id="register-role" required
+                            class="w-full px-4 py-3 border border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors bg-slate-950 text-slate-100 text-sm">
+                            <option value="">Option</option>
+                            <option value="student">Student</option>
+                            <option value="seller">Seller</option>
+                        </select>
+                    </div>
+
+                    <!-- 3. Matric Card Upload (Conditional) -->
+                    <div id="matric-card-section" class="hidden file-upload-wrapper">
+                        <label class="block text-sm font-medium text-slate-200 mb-2">3. Upload Matric Card</label>
+                        <div
+                            class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-700 border-dashed rounded-xl hover:border-brand-teal transition-colors bg-slate-950">
+                            <div id="matric-upload-prompt" class="space-y-1 text-center">
+                                <svg class="mx-auto h-12 w-12 text-slate-500" stroke="currentColor" fill="none"
+                                    viewBox="0 0 48 48" aria-hidden="true">
+                                    <path
+                                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <div class="flex text-sm text-slate-300 justify-center">
+                                    <label for="file-upload"
+                                        class="relative cursor-pointer bg-slate-900 rounded-md font-medium text-brand-teal hover:text-brand-tealHover focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-offset-slate-950 focus-within:ring-brand-teal px-1">
+                                        <span>Upload a file</span>
+                                        <input id="file-upload" name="file-upload" type="file" accept="image/png,image/jpeg" class="sr-only">
+                                    </label>
+                                    <p class="pl-1">or drag and drop</p>
+                                </div>
+                                <p class="text-xs text-slate-500">PNG or JPG up to 2MB</p>
+                            </div>
+                            <div id="matric-upload-selected" class="hidden w-full items-center justify-between gap-3 rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-left">
+                                <div class="flex min-w-0 items-center gap-3">
+                                    <svg class="h-6 w-6 shrink-0 text-brand-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 16m-6-10h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <span id="matric-upload-filename" class="truncate text-sm font-medium text-slate-200"></span>
+                                </div>
+                                <button id="remove-matric-upload" type="button" class="shrink-0 rounded-md px-3 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-950/50 hover:text-red-300 transition-colors">Remove</button>
+                            </div>
+                        </div>
+                        <span class="validation-dot" aria-hidden="true"></span>
+                    </div>
+
+                    <!-- 4. Seller Registration Addon (Conditional) -->
+                    <div id="seller-addon-section" class="hidden space-y-4">
+                        <div class="bg-amber-950/40 border border-amber-500/30 p-4 rounded-xl">
+                            <h3 class="text-sm font-bold text-amber-300 mb-1">Fee & Terms for Sellers</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                Please pay the <strong>RM10.00</strong> registration fee to the bank account below to
+                                activate your seller account:<br>
+                                <span
+                                    class="block bg-slate-950 p-2 rounded mt-2 border border-slate-850 text-slate-100 font-mono text-center">
+                                    Bank: Maybank<br>
+                                    Account No.: 1640 1234 5678<br>
+                                    Account Name: CampusMart PolyCC
+                                </span>
+                            </p>
+                            <div class="mt-3 p-3 bg-red-950/50 border border-red-500/40 rounded-lg">
+                                <p class="text-xs text-red-400 font-semibold leading-relaxed flex items-start gap-1.5">
+                                    <svg class="w-4 h-4 shrink-0 mt-0.5 text-red-400" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                        </path>
+                                    </svg>
+                                    <span><strong>Warning:</strong> Anyone found to have made a fraudulent payment or
+                                        submitted false proof of payment may face strict action based on the personal
+                                        details and matric number registered with the university.</span>
+                                </p>
+                            </div>
+                        </div>
+                        <!-- Payment Receipt Upload -->
+                        <div class="file-upload-wrapper">
+                            <label class="block text-sm font-medium text-slate-200 mb-2">Upload Proof of Payment (PDF Only)</label>
+                            <div
+                                class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-700 border-dashed rounded-xl hover:border-brand-teal transition-colors bg-slate-950">
+                                <div id="receipt-upload-prompt" class="space-y-1 text-center">
+                                    <svg class="mx-auto h-12 w-12 text-slate-500" stroke="currentColor"
+                                        fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <div class="flex text-sm text-slate-300 justify-center">
+                                        <label for="seller-receipt"
+                                            class="relative cursor-pointer bg-slate-900 rounded-md font-medium text-brand-teal hover:text-brand-tealHover focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-offset-slate-950 focus-within:ring-brand-teal px-1">
+                                            <span id="seller-receipt-text">Upload PDF receipt</span>
+                                            <input id="seller-receipt" name="seller-receipt" type="file"
+                                                accept=".pdf" class="sr-only" required>
+                                        </label>
+                                        <p class="pl-1">or drag and drop</p>
+                                    </div>
+                                    <p class="text-xs text-slate-500">PDF files only</p>
+                                </div>
+                                <div id="receipt-upload-selected" class="hidden w-full items-center justify-between gap-3 rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-left">
+                                    <div class="flex min-w-0 items-center gap-3">
+                                        <svg class="h-6 w-6 shrink-0 text-brand-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 1.105-.895 2-2 2s-2-.895-2-2 .895-2 2-2 2 .895 2 2zm0 0v6m0-6c0-1.105.895-2 2-2s2 .895 2 2-.895 2-2 2-2-.895-2-2zm0 6v2m-8 0h16a2 2 0 002-2V5a2 2 0 00-2-2H4a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                        </svg>
+                                        <span id="receipt-upload-filename" class="truncate text-sm font-medium text-slate-200"></span>
+                                    </div>
+                                    <button id="remove-receipt-upload" type="button" class="shrink-0 rounded-md px-3 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-950/50 hover:text-red-300 transition-colors">Remove</button>
+                                </div>
+                            </div>
+                            <span class="validation-dot" aria-hidden="true"></span>
+                        </div>
+                        <div class="flex items-start checkbox-wrapper">
+                            <div class="flex items-center h-5">
+                                <input id="seller-agreement" type="checkbox"
+                                    class="focus:ring-brand-teal h-4 w-4 text-brand-teal border-slate-700 rounded bg-slate-950">
+                            </div>
+                            <div class="ml-3 text-xs">
+                                <label for="seller-agreement" class="font-medium text-slate-300">I agree to pay the
+                                    RM10 fee to register as a seller.</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                        class="w-full py-3.5 px-4 rounded-xl shadow-soft text-base font-bold text-slate-950 bg-brand-teal hover:bg-brand-tealHover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-950 focus:ring-brand-teal transition-all hover:shadow-hover">
+                        Submit Application
+                    </button>
+
+                    <div class="text-center pt-2">
+                        <p class="text-sm text-slate-300">Already have an account? <a href="#" id="register-login-link"
+                                class="font-bold text-brand-amber hover:text-brand-amberHover">Log in here</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- VIEW: SELL ITEM PAGE -->
+        <div id="view-sell" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+            <div class="max-w-xl mx-auto bg-slate-900 p-8 sm:p-10 rounded-2xl shadow-soft border border-slate-800">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-white">Create a New Listing</h1>
+                    <p class="mt-1 text-sm text-slate-400">Add your item details and upload a clear photo.</p>
+                </div>
+                <form id="sell-form" class="space-y-5">
+                    <div>
+                        <label for="sell-name" class="block text-sm font-medium text-slate-200 mb-1">Item Name</label>
+                        <input id="sell-name" type="text" autocomplete="off" required
+                            class="w-full px-4 py-2 border border-slate-700 rounded-lg bg-slate-950 text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors"
+                            placeholder="e.g. Handmade Tote Bag">
+                    </div>
+                    <div>
+                        <label for="sell-price" class="block text-sm font-medium text-slate-200 mb-1">Price (RM)</label>
+                        <input id="sell-price" type="number" step="0.01" min="0"
+                            onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 46"
+                            required
+                            class="w-full px-4 py-2 border border-slate-700 rounded-lg bg-slate-950 text-slate-100 focus:ring-2 focus:ring-brand-teal outline-none"
+                            placeholder="e.g. 25.00">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-slate-200 mb-1">Quantity Available</label>
+                        <input id="sell-quantity" type="number" min="1"
+                            onkeypress="return (event.charCode >= 48 && event.charCode <= 57)" required
+                            class="w-full px-4 py-2 border border-slate-700 rounded-lg bg-slate-950 text-slate-100 focus:ring-2 focus:ring-brand-teal outline-none"
+                            placeholder="e.g. 5">
+                    </div>
+
+                    <div>
+                        <label for="sell-category"
+                            class="block text-sm font-medium text-slate-200 mb-1">Category</label>
+                        <select id="sell-category" required
+                            class="w-full px-4 py-2 border border-slate-700 rounded-lg bg-slate-950 text-slate-100 focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors">
+                            <option value="">Select a category...</option>
+                            <option value="Food">Food</option>
+                            <option value="Apparel">Apparel</option>
+                            <option value="Books">Books</option>
+                            <option value="Stationery">Stationery</option>
+                            <option value="Services">Services</option>
+                            <option value="Electronics">Electronics</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="sell-description" class="block text-sm font-medium text-slate-200 mb-1">Product Description</label>
+                        <textarea id="sell-description" rows="4" required maxlength="1000"
+                            class="w-full px-4 py-2 border border-slate-700 rounded-lg bg-slate-950 text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-brand-teal focus:border-brand-teal outline-none transition-colors resize-y"
+                            placeholder="Terangkan keadaan produk, saiz, warna atau maklumat penting untuk pembeli."></textarea>
+                    </div>
+                    <div>
+                        <label for="sell-image" class="block text-sm font-medium text-slate-200 mb-1">Item Image</label>
+                        <input id="sell-image" type="file" accept="image/*" required
+                            class="block w-full text-sm text-slate-300">
+                        <p class="mt-1 text-xs text-slate-500">Upload a clear PNG or JPG photo of your item.</p>
+                    </div>
+                    <button type="submit"
+                        class="w-full py-3 bg-brand-teal hover:bg-brand-tealHover text-slate-950 font-bold rounded-lg shadow-soft hover:shadow-hover transition-colors">
+                        Post Listing
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- VIEW: PRODUCT DETAIL -->
+        <div id="view-product-detail" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+            <button id="back-to-products-btn" type="button" class="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-brand-teal hover:text-teal-300">
+                <span aria-hidden="true">←</span> Back to products
+            </button>
+            <div id="product-detail-content"></div>
+        </div>
+
+        <!-- PRODUCT IMAGE VIEWER -->
+        <div id="product-image-viewer" class="hidden fixed inset-0 z-[70] bg-slate-950/95 p-4 sm:p-8" role="dialog" aria-modal="true" aria-label="Full product image">
+            <div class="mx-auto flex h-full max-w-6xl flex-col">
+                <div class="mb-4 flex items-center justify-between gap-3">
+                    <p id="product-image-viewer-title" class="truncate text-sm font-semibold text-slate-200"></p>
+                    <div class="flex items-center gap-2">
+                        <button id="image-zoom-out" type="button" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 font-bold text-slate-200 hover:border-brand-teal" aria-label="Zoom out">−</button>
+                        <button id="image-zoom-reset" type="button" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-200 hover:border-brand-teal">100%</button>
+                        <button id="image-zoom-in" type="button" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 font-bold text-slate-200 hover:border-brand-teal" aria-label="Zoom in">+</button>
+                        <button id="close-image-viewer" type="button" class="rounded-lg bg-brand-amber px-3 py-2 text-sm font-bold text-slate-950 hover:bg-brand-amberHover">Close</button>
+                    </div>
+                </div>
+                <div id="product-image-viewer-stage" class="relative flex min-h-0 flex-1 items-center justify-center overflow-auto rounded-2xl border border-slate-800 bg-slate-900">
+                    <img id="product-image-viewer-image" alt="Full product image" class="max-h-full max-w-full origin-center object-contain transition-transform duration-200" draggable="false">
+                </div>
+                <p class="mt-3 text-center text-xs text-slate-400">Klik + atau − untuk zoom. Gunakan roda tetikus pada gambar untuk zoom in atau out.</p>
+            </div>
+        </div>
+
+        <!-- VIEW: DEVELOPER PAGE (admin only) -->
+        <div id="view-upgrade-seller" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+            <div class="max-w-xl mx-auto rounded-2xl bg-slate-900 border border-slate-800 p-8 sm:p-10 shadow-soft">
+                <p class="text-brand-amber text-sm font-bold uppercase tracking-wider">Account upgrade</p>
+                <h2 class="text-2xl font-bold text-white mt-2">Upgrade to a Seller Account</h2>
+                <p class="text-slate-400 mt-3">Your existing student account details will be kept. Complete the RM10 seller upgrade payment and upload the receipt below.</p>
+                <div class="mt-6 rounded-xl border border-amber-500/30 bg-amber-950/40 p-5">
+                    <h3 class="font-bold text-amber-300">Seller Upgrade Fee & Terms</h3>
+                    <p class="mt-2 text-sm leading-relaxed text-slate-300">Pay the <strong>RM10.00</strong> seller upgrade fee to the account below before submitting your receipt.</p>
+                    <div class="mt-3 rounded-lg border border-slate-800 bg-slate-950 p-3 text-center font-mono text-sm text-slate-100">Bank: Maybank<br>Account No.: 1640 1234 5678<br>Account Name: CampusMart PolyCC</div>
+                    <p class="mt-3 text-xs leading-relaxed text-red-300">Important: Your seller account is activated only after the receipt has been uploaded. Keep the payment details accurate.</p>
+                </div>
+                <form id="upgrade-seller-form" class="mt-6 space-y-5">
+                    <div><label class="block text-sm font-medium text-slate-200 mb-2">Payment receipt (PDF)</label><input id="upgrade-receipt" type="file" accept="application/pdf,.pdf" required class="block w-full text-sm text-slate-300 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-teal file:px-4 file:py-2 file:font-semibold file:text-slate-950 hover:file:bg-brand-tealHover"><div id="upgrade-receipt-selected" class="hidden mt-3 items-center justify-between rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"><span id="upgrade-receipt-filename" class="truncate text-slate-300"></span><button id="remove-upgrade-receipt" type="button" class="ml-3 shrink-0 font-semibold text-red-400 hover:text-red-300">Remove receipt</button></div></div>
+                    <label class="flex gap-3 text-sm text-slate-300"><input id="upgrade-agreement" type="checkbox" required class="mt-0.5 h-4 w-4 accent-teal-400"><span>I agree to the seller registration policy and confirm that the RM10 payment has been made.</span></label>
+                    <button type="submit" class="w-full rounded-xl bg-brand-teal px-4 py-3.5 font-bold text-slate-950 hover:bg-brand-tealHover transition-colors">Submit Seller Upgrade</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="view-developer" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+            <div class="mb-8">
+                <p class="text-brand-amber text-sm font-bold uppercase tracking-wider">Admin area</p>
+                <h2 class="text-3xl font-bold text-white mt-2">Developer Dashboard</h2>
+                <p class="text-slate-400 mt-2">Welcome, Shamil. Manage and review the CampusMart system here.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="rounded-2xl bg-slate-900 border border-slate-800 p-6"><p class="text-sm text-slate-400">Account access</p><p class="text-xl font-bold text-white mt-2">Administrator</p></div>
+                <div class="rounded-2xl bg-slate-900 border border-slate-800 p-6"><p class="text-sm text-slate-400">Registration data</p><p id="developer-registration-count" class="text-xl font-bold text-brand-teal mt-2">Loading...</p></div>
+                <div class="rounded-2xl bg-slate-900 border border-slate-800 p-6"><p class="text-sm text-slate-400">Seller product updates</p><p id="developer-product-count" class="text-xl font-bold text-brand-amber mt-2">Loading...</p></div>
+            </div>
+            <section class="mt-10">
+                <h3 class="text-xl font-bold text-white">Registration Records</h3>
+                <p class="text-sm text-slate-400 mt-1">Setiap pendaftaran yang tersimpan dalam folder Windows turut dipaparkan di sini.</p>
+                <div id="developer-registration-list" class="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-5"></div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 pt-12 pb-8 border-t border-slate-900 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                <div class="col-span-1 md:col-span-1">
+                    <div class="flex items-center mb-4">
+                        <div class="w-8 h-8 rounded bg-slate-900 flex items-center justify-center mr-2">
+                            <span class="text-white font-bold text-lg leading-none">P</span>
+                        </div>
+                        <span class="font-bold text-xl text-white tracking-tight">CampusMart <span
+                                class="text-brand-teal">PolyCC</span></span>
+                    </div>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        The official marketplace platform for CampusMart PolyCC students. Buy, sell, and grow your
+                        campus business safely.
+                    </p>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-sm text-slate-400">
+                        <li><a href="#" class="hover:text-brand-teal transition-colors">About Us</a></li>
+                        <li><a href="#" class="hover:text-brand-teal transition-colors">Categories</a></li>
+                        <li><a href="#" class="hover:text-brand-teal transition-colors"
+                                onclick="showView('sell')">Become a Seller</a></li>
+                        <li><a href="#" class="hover:text-brand-teal transition-colors">Student Portfolio</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Support</h4>
+                    <ul class="space-y-2 text-sm text-slate-400">
+                        <li><a href="#" class="hover:text-brand-teal transition-colors">FAQ</a></li>
+                        <li><a href="#" class="hover:text-brand-teal transition-colors">Contact Us</a></li>
+                        <li><a href="#" class="hover:text-brand-teal transition-colors">Safety Guide</a></li>
+                        <li><a href="#" class="hover:text-brand-teal transition-colors">Terms & Conditions</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Contact</h4>
+                    <ul class="space-y-2 text-sm text-slate-400">
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 mr-2 text-brand-teal" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                            support@polyccshop.edu
+                        </li>
+                        <li class="flex items-start mt-2">
+                            <svg class="w-5 h-5 mr-2 text-brand-teal" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 111.314 0z">
+                                </path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            PolyCC Main Campus, Student Hub
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div
+                class="pt-8 border-t border-slate-900 text-center md:text-left flex flex-col md:flex-row justify-between items-center">
+                <p class="text-slate-500 text-sm">
+                    &copy; <span id="year"></span> CampusMart PolyCC. All rights reserved.
+                </p>
+                <div class="flex space-x-4 mt-4 md:mt-0">
+                    <a href="#" class="text-slate-500 hover:text-white transition-colors">
+                        <span class="sr-only">Facebook</span>
+                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path fill-rule="evenodd"
+                                d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                    <a href="#" class="text-slate-500 hover:text-white transition-colors">
+                        <span class="sr-only">Instagram</span>
+                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path fill-rule="evenodd"
+                                d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Success Modal Overlay -->
+    <div id="success-modal"
+        class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-slate-950/80 backdrop-blur-sm transition-opacity duration-300 opacity-0">
+        <div
+            class="bg-slate-900 rounded-2xl p-8 max-w-sm w-full mx-4 shadow-2xl border border-slate-800 transform scale-95 transition-transform duration-300">
+            <div
+                class="w-16 h-16 bg-emerald-500/15 text-emerald-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h3 id="modal-title" class="text-xl font-bold text-center text-slate-50 mb-2">Order Submitted!</h3>
+            <p id="modal-desc" class="text-center text-sm text-slate-400 mb-6">Your payment details have been sent. The
+                seller will contact you shortly to confirm the COD arrangement.</p>
+            <button id="close-modal-btn"
+                class="w-full py-3 bg-brand-teal hover:bg-brand-tealHover text-slate-950 font-bold rounded-lg transition-colors">Return
+                to Shop</button>
+        </div>
+    </div>
+
+    <!-- Seller Policy Alert -->
+    <div id="seller-policy-alert" role="alert" aria-live="assertive"
+        class="fixed top-24 left-1/2 z-[110] hidden w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl border border-red-500/50 bg-red-950 px-5 py-4 text-red-100 shadow-2xl">
+        <div class="flex items-start gap-3">
+            <svg class="mt-0.5 h-5 w-5 shrink-0 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+            <div>
+                <p id="seller-policy-alert-title" class="font-bold">Incomplete Application</p>
+                <p id="seller-policy-alert-message" class="mt-1 text-sm text-red-200">Please complete all required fields before submitting your application.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Logic (unchanged JS) -->
+    <script>
+        // JS IS IDENTICAL TO YOUR ORIGINAL – ONLY COLORS ABOVE CHANGED
+
+        document.getElementById('year').textContent = new Date().getFullYear();
+        let isLoggedIn = false;
+        let currentUser = null;
+
+        const products = [
+        ];
+
+        let currentCategory = 'All';
+        let searchQuery = '';
+        let cartItems = [];
+
+        const grid = document.getElementById('product-grid');
+        const cartBadge = document.getElementById('cart-badge');
+        const searchInput = document.getElementById('search-input');
+        const mobileSearchInput = document.getElementById('mobile-search-input');
+        const catButtons = document.querySelectorAll('.cat-btn');
+        const popCatCards = document.querySelectorAll('.pop-cat-card');
+
+        const viewHome = document.getElementById('view-home');
+        const viewCart = document.getElementById('view-cart');
+        const viewCheckout = document.getElementById('view-checkout');
+        const viewCategory = document.getElementById('view-category');
+        const viewLogin = document.getElementById('view-login');
+        const viewRegister = document.getElementById('view-register');
+        const viewSell = document.getElementById('view-sell');
+        const viewProductDetail = document.getElementById('view-product-detail');
+        const viewUpgradeSeller = document.getElementById('view-upgrade-seller');
+        const viewDeveloper = document.getElementById('view-developer');
+        const sharedCategoryNav = document.getElementById('shared-category-nav');
+
+        const categoryPageTitle = document.getElementById('category-page-title');
+        const categoryProductGrid = document.getElementById('category-product-grid');
+
+        const navLogo = document.getElementById('nav-logo');
+        const navCartBtn = document.getElementById('nav-cart-btn');
+        const navLoginBtn = document.getElementById('nav-login-btn');
+        const navRegisterBtn = document.getElementById('nav-register-btn');
+        const navDeveloperBtn = document.getElementById('nav-developer-btn');
+        const navAuthDivider = document.getElementById('nav-auth-divider');
+        const navProfileName = document.getElementById('nav-profile-name');
+        const navProfileInitial = document.getElementById('nav-profile-initial');
+        const backToShopBtn = document.getElementById('back-to-shop-btn');
+        const backToProductsBtn = document.getElementById('back-to-products-btn');
+        const productDetailContent = document.getElementById('product-detail-content');
+        const productImageViewer = document.getElementById('product-image-viewer');
+        const productImageViewerImage = document.getElementById('product-image-viewer-image');
+        const productImageViewerTitle = document.getElementById('product-image-viewer-title');
+        let productImageZoom = 1;
+        const desktopSearchContainer = document.getElementById('desktop-search-container');
+        const mobileSearchContainer = document.getElementById('mobile-search-container');
+
+        const cartItemsContainer = document.getElementById('cart-items-container');
+        const cartSubtotalEl = document.getElementById('cart-subtotal');
+        const cartFeeEl = document.getElementById('cart-fee');
+        const cartTotalEl = document.getElementById('cart-total');
+        const checkoutBtn = document.getElementById('checkout-btn');
+
+        const checkoutSummaryItems = document.getElementById('checkout-summary-items');
+        const checkoutSubtotalEl = document.getElementById('checkout-subtotal');
+        const checkoutFeeEl = document.getElementById('checkout-fee');
+        const checkoutTotalEl = document.getElementById('checkout-total');
+        const checkoutForm = document.getElementById('checkout-form');
+
+        const successModal = document.getElementById('success-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-desc');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const registerForm = document.getElementById('register-form');
+        const sellerPolicyAlert = document.getElementById('seller-policy-alert');
+        const sellerPolicyAlertTitle = document.getElementById('seller-policy-alert-title');
+        const sellerPolicyAlertMessage = document.getElementById('seller-policy-alert-message');
+        let sellerPolicyAlertTimeout;
+
+        function showSellerPolicyAlert(title, message) {
+            if (!sellerPolicyAlert) return;
+            sellerPolicyAlertTitle.textContent = title;
+            sellerPolicyAlertMessage.textContent = message;
+            sellerPolicyAlert.classList.remove('hidden');
+            clearTimeout(sellerPolicyAlertTimeout);
+            sellerPolicyAlertTimeout = setTimeout(() => sellerPolicyAlert.classList.add('hidden'), 4500);
+        }
+
+        const loginRegisterLink = document.getElementById('login-register-link');
+        const registerLoginLink = document.getElementById('register-login-link');
+
+        const loginForm = document.getElementById('login-form');
+        function checkLoginBeforeSell() {
+            if (!isLoggedIn) {
+                alert('Please log in before becoming a seller.');
+                showView('login');
+            } else if (currentUser && currentUser.role === 'seller') {
+                showView('sell');
+            } else {
+                showView('upgrade-seller');
+            }
+        }
+
+        function showView(viewName) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            [viewHome, viewCart, viewCheckout, viewCategory, viewLogin, viewRegister, viewSell, viewProductDetail, viewUpgradeSeller, viewDeveloper].forEach(v => {
+                if (v) { v.classList.add('hidden'); v.classList.remove('block'); }
+            });
+
+            if (viewName === 'home' || viewName === 'category') {
+                sharedCategoryNav.classList.remove('hidden');
+                sharedCategoryNav.classList.add('block');
+            } else {
+                sharedCategoryNav.classList.add('hidden');
+                sharedCategoryNav.classList.remove('block');
+            }
+
+            if (viewName === 'home') {
+                viewHome.classList.remove('hidden'); viewHome.classList.add('block');
+                desktopSearchContainer.classList.remove('opacity-0', 'pointer-events-none');
+                mobileSearchContainer.classList.remove('hidden');
+
+                if (currentCategory !== 'All' && !searchQuery) {
+                    currentCategory = 'All';
+                    updateCategoryActiveState();
+                    renderProducts();
+                }
+            } else if (viewName === 'category') {
+                viewCategory.classList.remove('hidden'); viewCategory.classList.add('block');
+                desktopSearchContainer.classList.remove('opacity-0', 'pointer-events-none');
+                mobileSearchContainer.classList.remove('hidden');
+            } else if (viewName === 'cart') {
+                viewCart.classList.remove('hidden'); viewCart.classList.add('block');
+                desktopSearchContainer.classList.add('opacity-0', 'pointer-events-none');
+                mobileSearchContainer.classList.add('hidden');
+                renderCartPage();
+            } else if (viewName === 'checkout') {
+                viewCheckout.classList.remove('hidden'); viewCheckout.classList.add('block');
+                desktopSearchContainer.classList.add('opacity-0', 'pointer-events-none');
+                mobileSearchContainer.classList.add('hidden');
+                renderCheckoutPage();
+            } else if (viewName === 'login') {
+                viewLogin.classList.remove('hidden'); viewLogin.classList.add('block');
+                desktopSearchContainer.classList.add('opacity-0', 'pointer-events-none');
+                mobileSearchContainer.classList.add('hidden');
+            } else if (viewName === 'register') {
+                if (registerForm) {
+                    registerForm.reset();
+                    updateRegisterFormState();
+                    updateMatricUploadDisplay();
+                    updateReceiptUploadDisplay();
+                }
+                viewRegister.classList.remove('hidden'); viewRegister.classList.add('block');
+                desktopSearchContainer.classList.add('opacity-0', 'pointer-events-none');
+                mobileSearchContainer.classList.add('hidden');
+            } else if (viewName === 'sell') {
+                viewSell.classList.remove('hidden'); viewSell.classList.add('block');
+                desktopSearchContainer.classList.add('opacity-0', 'pointer-events-none');
+                mobileSearchContainer.classList.add('hidden');
+            } else if (viewName === 'product-detail') {
+                viewProductDetail.classList.remove('hidden'); viewProductDetail.classList.add('block');
+                desktopSearchContainer.classList.add('opacity-0', 'pointer-events-none');
+                mobileSearchContainer.classList.add('hidden');
+            } else if (viewName === 'upgrade-seller') {
+                viewUpgradeSeller.classList.remove('hidden'); viewUpgradeSeller.classList.add('block');
+                desktopSearchContainer.classList.add('opacity-0', 'pointer-events-none');
+                mobileSearchContainer.classList.add('hidden');
+            } else if (viewName === 'developer') {
+                viewDeveloper.classList.remove('hidden'); viewDeveloper.classList.add('block');
+                desktopSearchContainer.classList.add('opacity-0', 'pointer-events-none');
+                mobileSearchContainer.classList.add('hidden');
+                loadDeveloperRegistrations();
+            }
+        }
+
+        navLogo.addEventListener('click', () => showView('home'));
+        backToShopBtn.addEventListener('click', () => showView('home'));
+        if (backToProductsBtn) backToProductsBtn.addEventListener('click', () => showView('home'));
+        navCartBtn.addEventListener('click', () => showView('cart'));
+        if (checkoutBtn) checkoutBtn.addEventListener('click', () => showView('checkout'));
+        if (navLoginBtn) navLoginBtn.addEventListener('click', (e) => { e.preventDefault(); showView('login'); });
+        if (navRegisterBtn) navRegisterBtn.addEventListener('click', (e) => { e.preventDefault(); showView('register'); });
+
+        if (loginRegisterLink) loginRegisterLink.addEventListener('click', (e) => { e.preventDefault(); showView('register'); });
+        if (registerLoginLink) registerLoginLink.addEventListener('click', (e) => { e.preventDefault(); showView('login'); });
+
+        function updateCategoryActiveState() {
+            catButtons.forEach(b => {
+                if (b.dataset.category === currentCategory) {
+                    b.className = 'cat-btn px-4 py-1.5 rounded-full bg-brand-teal text-slate-950 shadow-sm whitespace-nowrap transition-all font-semibold';
+                } else {
+                    b.className = 'cat-btn px-4 py-1.5 rounded-full hover:bg-slate-800 whitespace-nowrap transition-all text-slate-200';
+                }
+            });
+        }
+
+        catButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                currentCategory = e.target.dataset.category;
+                updateCategoryActiveState();
+
+                if (currentCategory === 'All') {
+                    showView('home');
+                } else {
+                    categoryPageTitle.textContent = currentCategory;
+                    showView('category');
+                }
+                renderProducts();
+            });
+        });
+
+        if (popCatCards) {
+            popCatCards.forEach(card => {
+                card.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    currentCategory = e.currentTarget.dataset.category;
+                    updateCategoryActiveState();
+                    categoryPageTitle.textContent = currentCategory;
+                    showView('category');
+                    renderProducts();
+                });
+            });
+        }
+
+        const handleSearch = (e) => {
+            searchQuery = e.target.value;
+            if (e.target.id === 'search-input') mobileSearchInput.value = searchQuery;
+            else searchInput.value = searchQuery;
+
+            if (searchQuery.trim().length > 0) {
+                categoryPageTitle.textContent = 'Search Results';
+                if (!viewCategory.classList.contains('block')) {
+                    showView('category');
+                }
+            } else if (currentCategory === 'All') {
+                if (!viewHome.classList.contains('block')) {
+                    showView('home');
+                }
+            } else {
+                categoryPageTitle.textContent = currentCategory;
+            }
+
+            renderProducts();
+        };
+
+        searchInput.addEventListener('input', handleSearch);
+        mobileSearchInput.addEventListener('input', handleSearch);
+
+        function createProductCard(p) {
+            const card = document.createElement('div');
+            card.className = 'bg-slate-900 rounded-xl border border-slate-800 overflow-hidden hover:shadow-hover hover:border-brand-teal/60 transition-all group flex flex-col h-full cursor-pointer';
+
+            card.innerHTML = `
+                <div class="relative w-full h-48 bg-slate-900 overflow-hidden">
+                    <img src="${p.image}" alt="${p.name}" class="w-full h-full object-contain transition-transform duration-500">
+                    <div class="absolute top-3 left-3 px-2 py-1 bg-slate-950/90 backdrop-blur-sm text-slate-100 text-xs font-semibold rounded-md border border-slate-700">
+                        ${p.category}
+                    </div>
+                </div>
+                <div class="p-5 flex flex-col flex-grow">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-slate-100 leading-tight">${p.name}</h3>
+                        <span class="font-bold text-brand-teal ml-2 whitespace-nowrap">RM${p.price.toFixed(2)}</span>
+                    </div>
+                    <div class="flex items-center text-sm text-slate-400 mb-4">
+                        <div class="w-5 h-5 bg-slate-800 rounded-full flex items-center justify-center mr-2 overflow-hidden">
+                            <span class="text-[10px] font-bold text-slate-300">${p.seller.charAt(0)}</span>
+                        </div>
+                        <span class="truncate">${p.seller} <span class="text-slate-500 text-xs ml-1">${p.handle}</span></span>
+                    </div>
+                    <div class="mt-auto pt-4 flex space-x-2">
+                        <button class="add-to-cart-btn flex-1 bg-slate-950 border border-slate-700 hover:border-brand-teal hover:text-brand-teal text-slate-200 font-medium py-2 px-3 rounded-lg text-sm transition-colors shadow-sm flex items-center justify-center" data-id="${p.id}">
+                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            Add to Cart
+                        </button>
+                        <button class="buy-btn bg-brand-amber hover:bg-brand-amberHover text-slate-950 font-medium py-2 px-4 rounded-lg text-sm transition-colors shadow-soft">
+                            Buy
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            const addBtn = card.querySelector('.add-to-cart-btn');
+            addBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                addToCart(p);
+                const originalText = addBtn.innerHTML;
+                addBtn.innerHTML = `<svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Added`;
+                addBtn.classList.replace('text-slate-200', 'text-brand-teal');
+                addBtn.classList.replace('border-slate-700', 'border-brand-teal');
+
+                setTimeout(() => {
+                    addBtn.innerHTML = originalText;
+                    addBtn.classList.replace('text-brand-teal', 'text-slate-200');
+                    addBtn.classList.replace('border-brand-teal', 'border-slate-700');
+                }, 1500);
+            });
+
+            const buyBtn = card.querySelector('.buy-btn');
+            buyBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                addToCart(p);
+                showView('cart');
+            });
+
+            card.addEventListener('click', () => openProductDetail(p));
+
+            return card;
+        }
+
+        function openProductDetail(p) {
+            if (!productDetailContent) return;
+            const description = p.description || 'Seller belum menambah penerangan untuk produk ini.';
+            const quantity = Number.isFinite(Number(p.quantity)) ? Number(p.quantity) : 0;
+            productDetailContent.innerHTML = `
+                <article class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 rounded-2xl bg-slate-900 border border-slate-800 p-5 sm:p-8">
+                    <button id="open-product-image" type="button" class="group relative aspect-square overflow-hidden rounded-xl border border-slate-800 bg-slate-950 text-left focus:outline-none focus:ring-2 focus:ring-brand-teal" aria-label="View full image for ${escapeHtml(p.name)}"><img src="${p.image}" alt="${escapeHtml(p.name)}" class="h-full w-full object-contain"><span class="absolute inset-x-0 bottom-0 bg-slate-950/80 px-4 py-3 text-center text-sm font-bold text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus:opacity-100">Click to view full image &amp; zoom</span></button>
+                    <div class="flex flex-col">
+                        <div class="flex flex-wrap items-center gap-3"><span class="rounded-full bg-teal-500/15 px-3 py-1 text-xs font-bold text-teal-300">${escapeHtml(p.category)}</span><span class="text-sm text-slate-500">Product ID: ${escapeHtml(String(p.id).slice(0, 8))}</span></div>
+                        <h1 class="mt-4 text-3xl font-bold text-white">${escapeHtml(p.name)}</h1>
+                        <p class="mt-4 text-3xl font-extrabold text-brand-teal">RM${Number(p.price).toFixed(2)}</p>
+                        <div class="mt-6 border-y border-slate-800 py-5"><h2 class="font-bold text-slate-100">Product Description</h2><p class="mt-2 whitespace-pre-line leading-relaxed text-slate-300">${escapeHtml(description)}</p></div>
+                        <dl class="mt-5 grid grid-cols-2 gap-4 text-sm"><div class="rounded-lg bg-slate-950 p-4"><dt class="text-slate-500">Stock available</dt><dd class="mt-1 font-bold text-slate-100">${quantity > 0 ? `${quantity} unit` : 'Ask seller'}</dd></div><div class="rounded-lg bg-slate-950 p-4"><dt class="text-slate-500">Category</dt><dd class="mt-1 font-bold text-slate-100">${escapeHtml(p.category)}</dd></div></dl>
+                        <div class="mt-5 rounded-xl border border-slate-800 bg-slate-950 p-4"><p class="text-xs text-slate-500">Sold by</p><p class="mt-1 font-bold text-slate-100">${escapeHtml(p.seller)} <span class="ml-1 text-sm font-normal text-slate-500">${escapeHtml(p.handle || '')}</span></p></div>
+                        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3"><button id="detail-add-cart" class="rounded-lg border border-brand-teal bg-slate-950 px-4 py-3 font-bold text-brand-teal hover:bg-teal-500/10">Add to Cart</button><button id="detail-buy-now" class="rounded-lg bg-brand-amber px-4 py-3 font-bold text-slate-950 hover:bg-brand-amberHover">Buy Now</button></div>
+                    </div>
+                </article>`;
+            productDetailContent.querySelector('#detail-add-cart').addEventListener('click', () => addToCart(p));
+            productDetailContent.querySelector('#detail-buy-now').addEventListener('click', () => { addToCart(p); showView('cart'); });
+            productDetailContent.querySelector('#open-product-image').addEventListener('click', () => openProductImageViewer(p));
+            showView('product-detail');
+        }
+
+        function updateProductImageZoom() {
+            if (!productImageViewerImage) return;
+            productImageViewerImage.style.transform = `scale(${productImageZoom})`;
+            const resetButton = document.getElementById('image-zoom-reset');
+            if (resetButton) resetButton.textContent = `${Math.round(productImageZoom * 100)}%`;
+        }
+
+        function openProductImageViewer(p) {
+            if (!productImageViewer || !productImageViewerImage) return;
+            productImageZoom = 1;
+            productImageViewerImage.src = p.image;
+            productImageViewerImage.alt = `Full image of ${p.name}`;
+            if (productImageViewerTitle) productImageViewerTitle.textContent = p.name;
+            productImageViewer.classList.remove('hidden');
+            updateProductImageZoom();
+        }
+
+        function closeProductImageViewer() {
+            if (productImageViewer) productImageViewer.classList.add('hidden');
+        }
+
+        document.getElementById('image-zoom-in').addEventListener('click', () => { productImageZoom = Math.min(3, productImageZoom + 0.25); updateProductImageZoom(); });
+        document.getElementById('image-zoom-out').addEventListener('click', () => { productImageZoom = Math.max(0.5, productImageZoom - 0.25); updateProductImageZoom(); });
+        document.getElementById('image-zoom-reset').addEventListener('click', () => { productImageZoom = 1; updateProductImageZoom(); });
+        document.getElementById('close-image-viewer').addEventListener('click', closeProductImageViewer);
+        productImageViewer.addEventListener('click', (event) => { if (event.target === productImageViewer) closeProductImageViewer(); });
+        productImageViewerImage.addEventListener('wheel', (event) => {
+            event.preventDefault();
+            productImageZoom = Math.min(3, Math.max(0.5, productImageZoom + (event.deltaY < 0 ? 0.1 : -0.1)));
+            updateProductImageZoom();
+        }, { passive: false });
+        document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && productImageViewer && !productImageViewer.classList.contains('hidden')) closeProductImageViewer(); });
+
+        function renderProducts() {
+            const filtered = products.filter(p => {
+                const matchCat = currentCategory === 'All' || p.category === currentCategory;
+                const searchLower = searchQuery.toLowerCase();
+                const matchSearch = p.name.toLowerCase().includes(searchLower) || p.seller.toLowerCase().includes(searchLower);
+                return matchCat && matchSearch;
+            });
+
+            const renderToGrid = (gridElement) => {
+                if (!gridElement) return;
+                gridElement.innerHTML = '';
+
+                if (filtered.length === 0) {
+                    gridElement.innerHTML = `
+                        <div class="col-span-full py-16 text-center bg-slate-900 rounded-xl border border-slate-800">
+                            <svg class="mx-auto h-12 w-12 text-slate-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <h3 class="text-lg font-medium text-slate-100">No products found</h3>
+                            <p class="mt-1 text-sm text-slate-400">Try adjusting your search or category filters.</p>
+                        </div>`;
+                    return;
+                }
+
+                filtered.forEach(p => {
+                    gridElement.appendChild(createProductCard(p));
+                });
+            };
+
+            renderToGrid(grid);
+            renderToGrid(categoryProductGrid);
+        }
+
+        function updateCartBadge() {
+            const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+            cartBadge.textContent = totalItems;
+
+            cartBadge.classList.remove('animate-pop');
+            void cartBadge.offsetWidth;
+            cartBadge.classList.add('animate-pop');
+        }
+
+        function addToCart(product) {
+            const existingItem = cartItems.find(item => item.product.id === product.id);
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cartItems.push({ product: product, quantity: 1 });
+            }
+            updateCartBadge();
+        }
+
+        function changeQuantity(productId, delta) {
+            const itemIndex = cartItems.findIndex(item => item.product.id === productId);
+            if (itemIndex > -1) {
+                cartItems[itemIndex].quantity += delta;
+                if (cartItems[itemIndex].quantity <= 0) {
+                    cartItems.splice(itemIndex, 1);
+                }
+                updateCartBadge();
+                renderCartPage();
+            }
+        }
+
+        function removeFromCart(productId) {
+            cartItems = cartItems.filter(item => item.product.id !== productId);
+            updateCartBadge();
+            renderCartPage();
+        }
+
+        function renderCartPage() {
+            cartItemsContainer.innerHTML = '';
+
+            if (cartItems.length === 0) {
+                cartItemsContainer.innerHTML = `
+                    <div class="bg-slate-900 rounded-2xl border border-slate-800 p-12 text-center">
+                        <div class="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-800">
+                            <svg class="w-10 h-10 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-100 mb-2">Your cart is empty</h3>
+                        <p class="text-slate-400 mb-6">Looks like you haven't added anything to your cart yet.</p>
+                        <button onclick="showView('home')" class="px-6 py-2 bg-brand-teal text-slate-950 rounded-lg hover:bg-brand-tealHover transition-colors">Start Shopping</button>
+                    </div>
+                `;
+                cartSubtotalEl.textContent = 'RM0.00';
+                cartFeeEl.textContent = 'RM0.00';
+                cartTotalEl.textContent = 'RM0.00';
+                if (checkoutBtn) checkoutBtn.disabled = true;
+                return;
+            }
+
+            let subtotal = 0;
+            if (checkoutBtn) checkoutBtn.disabled = false;
+
+            cartItems.forEach(item => {
+                const p = item.product;
+                const itemTotal = p.price * item.quantity;
+                subtotal += itemTotal;
+
+                const row = document.createElement('div');
+                row.className = 'bg-slate-900 rounded-2xl border border-slate-800 p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-6';
+                row.innerHTML = `
+                    <div class="w-full sm:w-24 h-24 bg-slate-900 rounded-lg flex-shrink-0 overflow-hidden border border-slate-800">
+                        <img src="${p.image}" alt="${p.name}" class="w-full h-full object-cover">
+                    </div>
+
+                    <div class="flex-grow w-full text-center sm:text-left">
+                        <h3 class="font-bold text-lg text-slate-100 mb-1">${p.name}</h3>
+                        <p class="text-sm text-slate-400 mb-3">Seller: ${p.seller}</p>
+                        <p class="font-bold text-brand-teal block sm:hidden mb-4">RM${p.price.toFixed(2)}</p>
+
+                        <div class="flex items-center justify-center sm:justify-start space-x-4">
+                            <div class="flex items-center border border-slate-700 rounded-lg bg-slate-950">
+                                <button class="px-3 py-1 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-l-lg transition-colors" onclick="changeQuantity(${p.id}, -1)">−</button>
+                                <span class="w-8 text-center text-sm font-medium text-slate-100">${item.quantity}</span>
+                                <button class="px-3 py-1 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-r-lg transition-colors" onclick="changeQuantity(${p.id}, 1)">+</button>
+                            </div>
+                            <button onclick="removeFromCart(${p.id})" class="text-sm text-red-400 hover:text-red-300 font-medium transition-colors">Remove</button>
+                        </div>
+                    </div>
+
+                    <div class="hidden sm:block text-right">
+                        <p class="text-sm text-slate-500 mb-1">RM${p.price.toFixed(2)} each</p>
+                        <p class="font-bold text-xl text-slate-100">RM${itemTotal.toFixed(2)}</p>
+                    </div>
+                `;
+                cartItemsContainer.appendChild(row);
+            });
+
+            const fee = subtotal * 0.02;
+            const total = subtotal + fee;
+
+            cartSubtotalEl.textContent = `RM${subtotal.toFixed(2)}`;
+            cartFeeEl.textContent = `RM${fee.toFixed(2)}`;
+            cartTotalEl.textContent = `RM${total.toFixed(2)}`;
+        }
+
+        function renderCheckoutPage() {
+            if (!checkoutSummaryItems) return;
+            checkoutSummaryItems.innerHTML = '';
+            let subtotal = 0;
+
+            cartItems.forEach(item => {
+                const p = item.product;
+                const itemTotal = p.price * item.quantity;
+                subtotal += itemTotal;
+
+                const row = document.createElement('div');
+                row.className = 'flex justify-between items-start text-sm border-b border-slate-800 pb-3 last:border-0 last:pb-0';
+                row.innerHTML = `
+                    <div class="pr-4">
+                        <p class="font-bold text-slate-100">${p.name}</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Qty: ${item.quantity}</p>
+                    </div>
+                    <span class="font-medium text-slate-100 whitespace-nowrap">RM${itemTotal.toFixed(2)}</span>
+                `;
+                checkoutSummaryItems.appendChild(row);
+            });
+
+            const fee = subtotal * 0.02;
+            const total = subtotal + fee;
+
+            checkoutSubtotalEl.textContent = `RM${subtotal.toFixed(2)}`;
+            checkoutFeeEl.textContent = `RM${fee.toFixed(2)}`;
+            checkoutTotalEl.textContent = `RM${total.toFixed(2)}`;
+        }
+
+        if (checkoutForm) {
+            checkoutForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const receiptInput = document.getElementById('checkout-receipt');
+                if (receiptInput && receiptInput.files.length > 0) {
+                    const file = receiptInput.files[0];
+                    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+                        alert('Hanya fail PDF sahaja dibenarkan untuk bukti pembayaran.');
+                        return;
+                    }
+                }
+
+                const btn = checkoutForm.querySelector('button[type="submit"]');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = 'Processing...';
+                btn.disabled = true;
+
+                setTimeout(() => {
+                    modalTitle.textContent = 'Order Submitted!';
+                    modalDesc.textContent = 'Your payment details have been sent. The seller will contact you shortly to confirm the COD arrangement.';
+
+                    successModal.classList.remove('hidden');
+                    setTimeout(() => {
+                        successModal.classList.remove('opacity-0');
+                        successModal.classList.add('opacity-100');
+                        successModal.querySelector('div').classList.remove('scale-95');
+                        successModal.querySelector('div').classList.add('scale-100');
+                    }, 10);
+
+                    cartItems = [];
+                    updateCartBadge();
+                    checkoutForm.reset();
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 1200);
+            });
+        }
+
+        const registerRoleSelect = document.getElementById('register-role');
+        const matricCardSection = document.getElementById('matric-card-section');
+        const sellerAddonSection = document.getElementById('seller-addon-section');
+        const fileUploadInput = document.getElementById('file-upload');
+        const sellerAgreementInput = document.getElementById('seller-agreement');
+        const sellerReceiptInput = document.getElementById('seller-receipt');
+        const matricUploadPrompt = document.getElementById('matric-upload-prompt');
+        const matricUploadSelected = document.getElementById('matric-upload-selected');
+        const matricUploadFilename = document.getElementById('matric-upload-filename');
+        const removeMatricUploadBtn = document.getElementById('remove-matric-upload');
+        const receiptUploadPrompt = document.getElementById('receipt-upload-prompt');
+        const receiptUploadSelected = document.getElementById('receipt-upload-selected');
+        const receiptUploadFilename = document.getElementById('receipt-upload-filename');
+        const removeReceiptUploadBtn = document.getElementById('remove-receipt-upload');
+        let hasAttemptedRegisterSubmit = false;
+
+        function updateMatricUploadDisplay() {
+            if (!fileUploadInput || !matricUploadPrompt || !matricUploadSelected || !matricUploadFilename) return;
+
+            const selectedFile = fileUploadInput.files[0];
+            const hasFile = Boolean(selectedFile);
+            matricUploadPrompt.classList.toggle('hidden', hasFile);
+            matricUploadSelected.classList.toggle('hidden', !hasFile);
+            matricUploadSelected.classList.toggle('flex', hasFile);
+            matricUploadFilename.textContent = hasFile ? selectedFile.name : '';
+        }
+
+        function updateReceiptUploadDisplay() {
+            if (!sellerReceiptInput || !receiptUploadPrompt || !receiptUploadSelected || !receiptUploadFilename) return;
+
+            const selectedFile = sellerReceiptInput.files[0];
+            const hasFile = Boolean(selectedFile);
+            receiptUploadPrompt.classList.toggle('hidden', hasFile);
+            receiptUploadSelected.classList.toggle('hidden', !hasFile);
+            receiptUploadSelected.classList.toggle('flex', hasFile);
+            receiptUploadFilename.textContent = hasFile ? selectedFile.name : '';
+        }
+
+        function setRegisterFieldState(field) {
+            const wrapper = field.closest('.field-wrapper, .file-upload-wrapper, .checkbox-wrapper');
+            const dot = wrapper ? wrapper.querySelector('.validation-dot') : null;
+
+            if (field === fileUploadInput) {
+                const allowedTypes = ['image/png', 'image/jpeg'];
+                const hasUnsupportedType = field.files.length > 0 && !allowedTypes.includes(field.files[0].type);
+                field.setCustomValidity(hasUnsupportedType ? 'Sila muat naik fail PNG atau JPEG sahaja.' : '');
+            }
+            const isValid = field.checkValidity();
+
+            if (dot) {
+                dot.classList.add('visible');
+                dot.classList.toggle('valid', isValid);
+            }
+            field.setAttribute('aria-invalid', String(!isValid));
+            return isValid;
+        }
+
+        function validateRegisterForm() {
+            const activeFields = [
+                document.getElementById('register-name'),
+                document.getElementById('register-matric'),
+                document.getElementById('register-email'),
+                document.getElementById('register-password'),
+                registerRoleSelect,
+                fileUploadInput
+            ];
+
+            if (registerRoleSelect && registerRoleSelect.value === 'seller') {
+                activeFields.push(sellerAgreementInput, sellerReceiptInput);
+            }
+
+            return activeFields.filter(Boolean).map(setRegisterFieldState).every(Boolean);
+        }
+
+        function updateRegisterFormState() {
+            if (!registerRoleSelect) return;
+            const role = registerRoleSelect.value;
+            if (role === 'student') {
+                matricCardSection.classList.remove('hidden');
+                sellerAddonSection.classList.add('hidden');
+                fileUploadInput.required = true;
+                sellerAgreementInput.required = false;
+                sellerReceiptInput.required = false;
+            } else if (role === 'seller') {
+                matricCardSection.classList.remove('hidden');
+                sellerAddonSection.classList.remove('hidden');
+                fileUploadInput.required = true;
+                sellerAgreementInput.required = true;
+                sellerReceiptInput.required = true;
+            } else {
+                matricCardSection.classList.add('hidden');
+                sellerAddonSection.classList.add('hidden');
+                fileUploadInput.required = false;
+                sellerAgreementInput.required = false;
+                sellerReceiptInput.required = false;
+            }
+
+            if (hasAttemptedRegisterSubmit) validateRegisterForm();
+        }
+
+        if (registerRoleSelect) {
+            registerRoleSelect.addEventListener('change', updateRegisterFormState);
+        }
+
+        if (registerForm) {
+            registerForm.querySelectorAll('input, select').forEach(field => {
+                const eventName = field.type === 'file' || field.type === 'checkbox' || field.tagName === 'SELECT' ? 'change' : 'input';
+                field.addEventListener(eventName, () => {
+                    if (field === fileUploadInput) updateMatricUploadDisplay();
+                    if (field === sellerReceiptInput) updateReceiptUploadDisplay();
+                    if (hasAttemptedRegisterSubmit) setRegisterFieldState(field);
+                });
+            });
+
+            if (removeMatricUploadBtn) {
+                removeMatricUploadBtn.addEventListener('click', () => {
+                    fileUploadInput.value = '';
+                    updateMatricUploadDisplay();
+                    if (hasAttemptedRegisterSubmit) setRegisterFieldState(fileUploadInput);
+                });
+            }
+
+            if (removeReceiptUploadBtn) {
+                removeReceiptUploadBtn.addEventListener('click', () => {
+                    sellerReceiptInput.value = '';
+                    updateReceiptUploadDisplay();
+                    if (hasAttemptedRegisterSubmit) setRegisterFieldState(sellerReceiptInput);
+                });
+            }
+
+            registerForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                hasAttemptedRegisterSubmit = true;
+                const role = registerRoleSelect ? registerRoleSelect.value : '';
+                const hasAcceptedSellerPolicy = role !== 'seller' || (sellerAgreementInput && sellerAgreementInput.checked);
+                const fieldsToComplete = [
+                    document.getElementById('register-name'),
+                    document.getElementById('register-matric'),
+                    document.getElementById('register-email'),
+                    document.getElementById('register-password'),
+                    registerRoleSelect,
+                    fileUploadInput
+                ];
+                if (role === 'seller') fieldsToComplete.push(sellerReceiptInput);
+                const hasIncompleteFields = fieldsToComplete.filter(Boolean).some(field => !field.checkValidity());
+
+                if (!validateRegisterForm()) {
+                    if (!role) {
+                        showSellerPolicyAlert('Account Type Required', 'Please select an account type (Student or Seller) before submitting your application.');
+                    } else if (!hasAcceptedSellerPolicy && hasIncompleteFields) {
+                        showSellerPolicyAlert('Complete Your Application', 'Please complete all required fields and agree to the seller registration policy before submitting.');
+                    } else if (!hasAcceptedSellerPolicy) {
+                        showSellerPolicyAlert('Agreement Required', 'Please agree to the seller registration policy before submitting your application.');
+                    } else {
+                        showSellerPolicyAlert('Incomplete Application', 'Please complete all required fields, including the required uploads, before submitting your application.');
+                    }
+                    return;
+                }
+
+                
+
+                const btn = registerForm.querySelector('button[type="submit"]');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = 'Submitting...';
+                btn.disabled = true;
+
+                setTimeout(() => {
+                    if (role === 'seller') {
+                        modalTitle.textContent = 'Seller Registration Received!';
+                        modalDesc.textContent = 'Your seller registration has been received. Please ensure the RM10 payment has been made. Your matric card is being reviewed for verification.';
+                    } else {
+                        modalTitle.textContent = 'Application Received!';
+                        modalDesc.textContent = 'Your registration and matric card have been submitted for verification. Please check your email for updates.';
+                    }
+
+                    successModal.classList.remove('hidden');
+                    setTimeout(() => {
+                        successModal.classList.remove('opacity-0');
+                        successModal.classList.add('opacity-100');
+                        successModal.querySelector('div').classList.remove('scale-95');
+                        successModal.querySelector('div').classList.add('scale-100');
+                    }, 10);
+
+                    registerForm.reset();
+                    updateMatricUploadDisplay();
+                    updateReceiptUploadDisplay();
+                    hasAttemptedRegisterSubmit = false;
+                    registerForm.querySelectorAll('.validation-dot').forEach(dot => dot.classList.remove('visible', 'valid'));
+                    registerForm.querySelectorAll('[aria-invalid]').forEach(field => field.removeAttribute('aria-invalid'));
+                    updateRegisterFormState();
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 1500);
+            });
+        }
+
+        if (closeModalBtn) {
+            closeModalBtn.addEventListener('click', () => {
+                successModal.classList.remove('opacity-100');
+                successModal.classList.add('opacity-0');
+                successModal.querySelector('div').classList.remove('scale-100');
+                successModal.querySelector('div').classList.add('scale-95');
+
+                setTimeout(() => {
+                    successModal.classList.add('hidden');
+                    showView('home');
+                }, 300);
+            });
+        }
+
+        const sellForm = document.getElementById('sell-form');
+        const sellName = document.getElementById('sell-name');
+        const sellPrice = document.getElementById('sell-price');
+        const sellCategory = document.getElementById('sell-category');
+        const sellDescription = document.getElementById('sell-description');
+        const sellQuantity = document.getElementById('sell-quantity');
+        const sellImageInput = document.getElementById('sell-image');
+
+        if (sellForm) {
+            sellForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                if (!sellImageInput.files || sellImageInput.files.length === 0) {
+                    alert('Please select an image for your item.');
+                    return;
+                }
+
+                if (!currentUser || currentUser.role !== 'seller') {
+                    alert('Sila log masuk menggunakan akaun seller untuk menambah produk.');
+                    showView('login');
+                    return;
+                }
+
+                const button = sellForm.querySelector('button[type="submit"]');
+                const originalText = button.innerHTML;
+                button.disabled = true;
+                button.innerHTML = 'Saving product...';
+                try {
+                    const result = await sendAccountRequest('/api/products', {
+                        matric: currentUser.matric,
+                        name: sellName.value.trim(),
+                        price: parseFloat(sellPrice.value),
+                        quantity: parseInt(sellQuantity.value, 10),
+                        category: sellCategory.value,
+                        description: sellDescription.value.trim(),
+                        image: await fileToUpload(sellImageInput.files[0])
+                    });
+                    const newProduct = result.product;
+                    products.push(newProduct);
+                    renderProducts();
+
+                    currentCategory = 'All';
+                    searchQuery = '';
+                    updateCategoryActiveState();
+
+                    modalTitle.textContent = 'Listing Posted!';
+                    modalDesc.textContent = 'Produk telah ditambah ke marketplace dan disimpan dalam folder seller anda.';
+                    successModal.classList.remove('hidden');
+                    setTimeout(() => {
+                        successModal.classList.remove('opacity-0');
+                        successModal.classList.add('opacity-100');
+                        successModal.querySelector('div').classList.remove('scale-95');
+                        successModal.querySelector('div').classList.add('scale-100');
+                    }, 10);
+
+                    sellForm.reset();
+                } catch (error) {
+                    alert(error.message || 'Tidak dapat menyimpan produk. Jalankan server.ps1 dahulu.');
+                } finally {
+                    button.disabled = false;
+                    button.innerHTML = originalText;
+                }
+            });
+        }
+
+        // Persistent account handling: works when this page is opened through server.ps1.
+        async function fileToUpload(file) {
+            if (!file) return null;
+            const dataUrl = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+            return { name: file.name, data: dataUrl.split(',')[1] };
+        }
+
+        async function sendAccountRequest(url, payload) {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'Permintaan tidak berjaya.');
+            return result;
+        }
+
+        function escapeHtml(value) {
+            const element = document.createElement('div');
+            element.textContent = value || '';
+            return element.innerHTML;
+        }
+
+        async function loadDeveloperRegistrations() {
+            const list = document.getElementById('developer-registration-list');
+            const count = document.getElementById('developer-registration-count');
+            const productCount = document.getElementById('developer-product-count');
+            if (!list || !count) return;
+            list.innerHTML = '<p class="text-slate-400">Loading registration records...</p>';
+            try {
+                const response = await fetch('/api/registrations');
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message);
+                const records = Array.isArray(result.registrations) ? result.registrations : (result.registrations ? [result.registrations] : []);
+                count.textContent = `${records.length} record${records.length === 1 ? '' : 's'} saved`;
+                if (productCount) {
+                    const productResponse = await fetch('/api/products');
+                    const productResult = await productResponse.json();
+                    if (!productResponse.ok) throw new Error(productResult.message);
+                    const sellerProducts = Array.isArray(productResult.products) ? productResult.products : [];
+                    productCount.textContent = `${sellerProducts.length} jenis produk dikemas kini`;
+                }
+                if (!records.length) {
+                    list.innerHTML = '<div class="rounded-xl border border-slate-800 bg-slate-900 p-6 text-slate-400">Belum ada pendaftaran.</div>';
+                    return;
+                }
+                list.innerHTML = records.map(record => {
+                    const date = record.registeredAt ? new Date(record.registeredAt).toLocaleString() : '-';
+                    const matricCard = record.matricCard ? `<a href="/${record.matricCard}" target="_blank" class="block"><img src="/${record.matricCard}" alt="Matric card" class="w-full h-44 object-cover rounded-lg border border-slate-700 hover:border-brand-teal"></a>` : '<div class="h-44 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-500">No matric card</div>';
+                    const receipt = record.sellerReceipt ? `<a href="/${record.sellerReceipt}" target="_blank" class="text-sm font-semibold text-brand-amber hover:text-amber-300">Open seller receipt</a>` : '';
+                    return `<article class="rounded-2xl bg-slate-900 border border-slate-800 p-5">${matricCard}<div class="mt-4"><div class="flex justify-between gap-3"><h4 class="font-bold text-lg text-white">${escapeHtml(record.name)}</h4><span class="text-xs rounded-full bg-teal-500/15 px-2 py-1 text-teal-300 capitalize">${escapeHtml(record.role)}</span></div><p class="text-sm text-slate-300 mt-2">Matric: ${escapeHtml(record.matric)}</p><p class="text-sm text-slate-400">${escapeHtml(record.email)}</p><p class="text-xs text-slate-500 mt-3">Registered: ${escapeHtml(date)}</p>${receipt}</div></article>`;
+                }).join('');
+            } catch (error) {
+                count.textContent = 'Unable to load';
+                if (productCount) productCount.textContent = 'Unable to load';
+                list.innerHTML = `<div class="rounded-xl border border-red-500/40 bg-red-950/30 p-6 text-red-200">${escapeHtml(error.message || 'Tidak dapat memuatkan rekod.')}</div>`;
+            }
+        }
+
+        async function loadSavedProducts() {
+            try {
+                const response = await fetch('/api/products');
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message);
+                const savedProducts = Array.isArray(result.products) ? result.products : [];
+                products.splice(0, products.length, ...savedProducts);
+                renderProducts();
+            } catch (_) {
+                // The interface remains usable when index.html is opened without server.ps1.
+            }
+        }
+
+        // Capture phase prevents the old demo-only submit handlers above from running.
+        document.addEventListener('submit', async (event) => {
+            const form = event.target;
+            if (form !== loginForm && form !== registerForm) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            if (!form.reportValidity()) return;
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+            submitButton.disabled = true;
+
+            try {
+                if (form === loginForm) {
+                    submitButton.innerHTML = 'Logging in...';
+                    const result = await sendAccountRequest('/api/login', {
+                        matric: document.getElementById('login-matric').value,
+                        password: document.getElementById('login-password').value
+                    });
+                    isLoggedIn = true;
+                    currentUser = result;
+                    if (navLoginBtn) navLoginBtn.style.display = 'none';
+                    if (navRegisterBtn) navRegisterBtn.style.display = 'none';
+                    if (navAuthDivider) navAuthDivider.style.display = 'none';
+                    if (navProfileName) navProfileName.textContent = result.name;
+                    if (navProfileInitial) navProfileInitial.textContent = result.name.trim().charAt(0).toUpperCase();
+                    if (navDeveloperBtn && result.role === 'admin') navDeveloperBtn.classList.remove('hidden');
+                    loginForm.reset();
+                    showView('home');
+                    alert(`Log masuk berjaya. Selamat datang, ${result.name}!`);
+                } else {
+                    const role = registerRoleSelect.value;
+                    if (!role) throw new Error('Sila pilih jenis akaun.');
+                    if (role === 'seller' && !sellerAgreementInput.checked) throw new Error('Sila setuju dengan polisi pendaftaran penjual.');
+                    submitButton.innerHTML = 'Saving...';
+                    await sendAccountRequest('/api/register', {
+                        name: document.getElementById('register-name').value,
+                        matric: document.getElementById('register-matric').value,
+                        email: document.getElementById('register-email').value,
+                        password: document.getElementById('register-password').value,
+                        role,
+                        matricCard: await fileToUpload(fileUploadInput.files[0]),
+                        receipt: role === 'seller' ? await fileToUpload(sellerReceiptInput.files[0]) : null
+                    });
+                    modalTitle.textContent = 'Registration Saved!';
+                    modalDesc.textContent = 'Maklumat dan fail pendaftaran anda telah disimpan dalam sistem. Anda kini boleh log masuk menggunakan email dan kata laluan.';
+                    successModal.classList.remove('hidden', 'opacity-0');
+                    successModal.classList.add('opacity-100');
+                    successModal.querySelector('div').classList.remove('scale-95');
+                    successModal.querySelector('div').classList.add('scale-100');
+                    registerForm.reset();
+                    updateMatricUploadDisplay();
+                    updateReceiptUploadDisplay();
+                    updateRegisterFormState();
+                }
+            } catch (error) {
+                alert(error.message || 'Tidak dapat menyambung ke sistem. Jalankan server.ps1 dahulu.');
+            } finally {
+                submitButton.innerHTML = originalText;
+                submitButton.disabled = false;
+            }
+        }, true);
+
+        const upgradeSellerForm = document.getElementById('upgrade-seller-form');
+        const upgradeReceiptInput = document.getElementById('upgrade-receipt');
+        const upgradeReceiptSelected = document.getElementById('upgrade-receipt-selected');
+        const upgradeReceiptFilename = document.getElementById('upgrade-receipt-filename');
+        const removeUpgradeReceiptBtn = document.getElementById('remove-upgrade-receipt');
+        function updateUpgradeReceiptDisplay() {
+            const file = upgradeReceiptInput && upgradeReceiptInput.files[0];
+            if (!upgradeReceiptSelected || !upgradeReceiptFilename) return;
+            upgradeReceiptSelected.classList.toggle('hidden', !file);
+            upgradeReceiptSelected.classList.toggle('flex', Boolean(file));
+            upgradeReceiptFilename.textContent = file ? file.name : '';
+        }
+        if (upgradeReceiptInput) upgradeReceiptInput.addEventListener('change', updateUpgradeReceiptDisplay);
+        if (removeUpgradeReceiptBtn) removeUpgradeReceiptBtn.addEventListener('click', () => {
+            upgradeReceiptInput.value = '';
+            updateUpgradeReceiptDisplay();
+        });
+        if (upgradeSellerForm) {
+            upgradeSellerForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                if (!upgradeSellerForm.reportValidity() || !currentUser) return;
+                const button = upgradeSellerForm.querySelector('button[type="submit"]');
+                const originalText = button.innerHTML;
+                button.disabled = true;
+                button.innerHTML = 'Submitting...';
+                try {
+                    await sendAccountRequest('/api/upgrade-seller', {
+                        matric: currentUser.matric,
+                        receipt: await fileToUpload(document.getElementById('upgrade-receipt').files[0])
+                    });
+                    alert('Your account has been upgraded to seller. Please log in again.');
+                    isLoggedIn = false;
+                    currentUser = null;
+                    if (navLoginBtn) navLoginBtn.style.display = '';
+                    if (navRegisterBtn) navRegisterBtn.style.display = '';
+                    if (navAuthDivider) navAuthDivider.style.display = '';
+                    if (navProfileName) navProfileName.textContent = 'Profile';
+                    if (navProfileInitial) navProfileInitial.textContent = 'M';
+                    showView('login');
+                } catch (error) {
+                    alert(error.message || 'Unable to upgrade the account.');
+                } finally {
+                    button.disabled = false;
+                    button.innerHTML = originalText;
+                }
+            });
+        }
+
+        renderProducts();
+        loadSavedProducts();
+    </script>
+</body>
+
+</html>
